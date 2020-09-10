@@ -70,7 +70,7 @@ data_lvedv <- read_outcome_data(
   eaf_col = "A1FREQ",
   pval_col = "P_BOLT_LMM"
 )
-data_lvedv$oucome <- "LVEDV"
+data_lvedv$outcome <- "LVEDV"
 
 # Run MVMR
 data_mvmr <- mv_harmonise_data(data_expo_mv, data_lvedv)
