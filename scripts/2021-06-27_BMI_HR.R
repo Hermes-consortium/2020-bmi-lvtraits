@@ -2,16 +2,23 @@
 
 pacman::p_load(MendelianRandomization, tidyverse, data.table, fs, glue)
 
-list_DT_gwas <- dir_ls("data/GWAS/LVtraits-subset_AungN2021", glob = "*.tsv.gz") %>%
-  set_names(~basename(.) %>%
-    str_extract(".*(?=-subset)")) %>%
-  map(fread, key = "varID")
+DT_assoc_BMI_ins <- fread("data/BMI_GIANT+UKB2018_instrument_rsq0.01_assoc.tsv", key="varID")
+DT_assoc_HR_ins <- fread("data/HeartRate_Eppinga2016_BMI_instrument_rsq0.01_assoc.tsv", key="varID")
 
-DT_gwas_BMI <- fread("data/GWAS/BMI_GIANT+UKB2018.CLEAN.tsv.gz", key = "varID")
+file_gwas_BMI <- "data/GWAS/BMI_GIANT+UKB2018.CLEAN.tsv.gz"
+file_ins <- "data/instruments/BMI_GIANT_UKB_2018_instrument_rsq0.01.txt"
+
+cmd <- glue("tabix -R <(cut -f1,3 {file_ins}) {file_gwas_BMI}")
+
+fread(cmd = glue("tabix -R <(awk -v OFS='\\t' 'NR>1 {{print $1, $3}}' {file_ins}) {file_gwas_BMI}"))
+
 DT_ins_BMI <- fread("data/instruments/BMI_GIANT_UKB_2018_instrument_rsq0.01.txt",
   key = "SNP")
 
 DT_gwas_ins_BMI <- DT_gwas_BMI[DT_ins_BMI[, .(SNP)], nomatch = 0L]
+
+DT_gwas_HR <- fread("data/GWAS/HeartRate_Eppinga2016.CLEAN.tsv.gz", key = "varID")
+
 
 merge_DT <- function(DT_gwas_x, DT_gwas_y) {
   merge(DT_gwas_x, DT_gwas_y[, .(varID, beta, se, P)], by = "varID")
@@ -43,4 +50,4 @@ df_res <- map_df(list_res_MR, format_res_MR, .id = "Outcome") %>%
 
 # write results
 dir_create("results")
-write_tsv(df_res, glue("results/{Sys.Date()}_BMI_LVtrait.tsv"))
+write_tsv(df_res, glue("results/{Sys.Date()}_BMI_HR.tsv"))
